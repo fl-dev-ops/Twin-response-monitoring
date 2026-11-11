@@ -171,7 +171,7 @@ def analyze(rows):
         g0, gl = b["gens"][0], b["gens"][-1]
         return {"steps": len(b["gens"]), "tools": b["tools"], "in": b["in"], "cached": b["cached"], "out": b["out"],
                 "model_name": b["model"],
-                "prep": g0["t0"] - ref_t0,                  # → first model call starts (brain pickup + context retrieval)
+                "prep": g0["t0"] - ref_t0,                  # → first model call starts (hand-off to Eve + context retrieval)
                 "hop": b["t0"] - ref_t0,                     # voice agent → brain picks the turn up (network + Vercel queue)
                 "retrieval": g0["t0"] - b["t0"],             # brain: Eve + Qwen + vector DB, until the model starts
                 "pre_speak": gl["t0"] - g0["t0"],           # earlier model calls + tools before the call that answered
@@ -322,7 +322,7 @@ def findings(a):
                    f"to its first chunk. The learner's wait from clicking Start is longer: the time before the agent job starts is on the studio side, not in Langfuse.")
     pf = a["plain_spoken"]
     if pf["n"]:
-        parts = [("end of speech → turn ends", a["plain_eot"]), ("brain pickup", a["plain_hop"]), ("context retrieval", a["plain_retrieval"]),
+        parts = [("end of speech → turn ends", a["plain_eot"]), ("hand-off to Eve", a["plain_hop"]), ("context retrieval", a["plain_retrieval"]),
                  ("model to first word", a["plain_model"]), ("TTS first audio", a["plain_tts"])]
         big = max(parts, key=lambda p: p[1]["p50"] or 0)
         out.append(f"<b>Learner turns:</b> learner stops speaking → twin starts speaking, median <b>{s(pf['p50'])}</b> (p80 {s(pf['p80'])}, {pf['n']} turns). "
@@ -466,14 +466,14 @@ const catLabel = {{ plain: 'Learner turn', tool: 'Learner turn + tool', file: 'R
   opening: 'Opening', nudge: 'Nudge after silence', cut: 'Cut off before speaking' }};
 
 const EOT = ['End of speech → turn ends', (r) => r.eot];
-const HOP = ['Brain pickup (network + queue)', (r) => r.hop];
+const HOP = ['Hand-off to Eve (Vercel agent framework)', (r) => r.hop];
 const RETR = ['Context retrieval', (r) => r.retrieval];
 const MODEL = ['Model to first word', (r) => r.model];
 const TTS = ['Text-to-speech first audio', (r) => r.tts];
 function types(S, T, none) {{
   return {{ S, T, list: [
     {{ key: 'start', unit: 'sessions', title: '1 · Session start', note: 'Agent job starts → twin starts speaking', rows: S.filter((x) => x.start_spoken != null), total: (r) => r.start_spoken,
-      steps: [['Agent joins room, starts session', (r) => r.join], ['Brain pickup (network + queue)', (r) => r.opening_hop], ['Context retrieval (loads the session)', (r) => r.opening_retrieval], ['Model to first word', (r) => r.opening_model], ['Text-to-speech first audio', (r) => r.opening_tts]] }},
+      steps: [['Agent joins room, starts session', (r) => r.join], ['Hand-off to Eve (Vercel agent framework)', (r) => r.opening_hop], ['Context retrieval (loads the session)', (r) => r.opening_retrieval], ['Model to first word', (r) => r.opening_model], ['Text-to-speech first audio', (r) => r.opening_tts]] }},
     {{ key: 'plain', title: '2 · Learner turn', note: 'Learner stops speaking → twin starts speaking', rows: T.filter((x) => x.cat === 'plain' && x.spoken != null), total: (r) => r.spoken,
       steps: [EOT, HOP, RETR, MODEL, TTS] }},
     {{ key: 'tool', empty: none, title: '3 · Turn with a tool call', note: 'Learner stops speaking → twin starts speaking', rows: T.filter((x) => ['tool', 'file', 'restarted'].includes(x.cat) && x.spoken != null), total: (r) => r.spoken,
@@ -571,7 +571,7 @@ function sessionsTable(S, T) {{
 
 function turnsTable(T) {{
   let h = '<tr><th>Session</th><th>Time (IST)</th><th>Type</th><th class="num">First spoken word</th><th class="num">End of turn</th><th class="num">Brain first chunk</th>' +
-    '<th class="num">Brain pickup</th><th class="num">Context retrieval</th><th class="num">Model to first word</th><th class="num">TTS first audio</th>' +
+    '<th class="num">Hand-off to Eve</th><th class="num">Context retrieval</th><th class="num">Model to first word</th><th class="num">TTS first audio</th>' +
     '<th class="num">Steps</th><th>Tools</th><th class="num">In tokens</th><th class="num">Cached</th><th class="num">Out tokens</th></tr>';
   for (const u of T) h += `<tr><td><code>${{esc(u.sid.slice(-8))}}</code></td><td>${{when(u.at, true)}}</td><td>${{esc(catLabel[u.cat] || u.cat)}}${{u.interrupted ? ' · talked over' : ''}}</td>
     <td class="num"><b>${{fmtS(u.spoken)}}</b></td><td class="num">${{fmtS(u.eot)}}</td><td class="num">${{fmtS(u.brain_ttft)}}</td><td class="num">${{fmtS(u.hop)}}</td><td class="num">${{fmtS(u.retrieval)}}</td>
