@@ -15,9 +15,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -31,8 +31,11 @@ jobs:
           python3 scripts/latency_report.py --out site/index.html
 
       - name: Publish to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy site --project-name=twin-response --branch=main --commit-dirty=true
+        env:
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          # Values pasted with quotes or spaces still work.
+          export CLOUDFLARE_API_TOKEN="$(printf '%s' "$TOKEN" | tr -d '"'"'"' \r\n')"
+          export CLOUDFLARE_ACCOUNT_ID="$(printf '%s' "$ACCOUNT" | tr -d '"'"'"' \r\n')"
+          npx --yes wrangler@4 pages deploy site --project-name=twin-response --branch=main --commit-dirty=true
