@@ -4,7 +4,7 @@ How fast the twin answers in prod voice calls, built hourly from Langfuse and pu
 
 - `scripts/latency_report.py` reads production spans from Langfuse (voice agent + chat brain) and writes one HTML page.
 - `.github/workflows/refresh.yml` runs it every hour (and on demand) and deploys the page to the Pages project `twin-response`.
-- `functions/_middleware.js` asks for the password (`DASHBOARD_PASSWORD`) on every request.
+- `functions/_middleware.js` asks for the password (`TWIN_PASSWORD`) on every request.
 
 Run it locally: `LANGFUSE_PUBLIC_KEY=… LANGFUSE_SECRET_KEY=… LANGFUSE_BASE_URL=https://us.cloud.langfuse.com python3 scripts/latency_report.py --out site/index.html`
 
@@ -12,7 +12,7 @@ Run it locally: `LANGFUSE_PUBLIC_KEY=… LANGFUSE_SECRET_KEY=… LANGFUSE_BASE_U
 
 1. **Cloudflare:** create the Pages project once:
    `npx wrangler login` then `npx wrangler pages project create twin-response --production-branch=main`.
-2. **Password:** `npx wrangler pages secret put DASHBOARD_PASSWORD --project-name twin-response`.
+2. **Password:** `npx wrangler pages secret put TWIN_PASSWORD --project-name twin-response`.
 3. **API token:** Cloudflare dashboard → My Profile → API Tokens → Create Token → template "Edit Cloudflare Workers"
    (or a custom token with *Account → Cloudflare Pages → Edit*). Note the Account ID from the dashboard sidebar.
 4. **GitHub secrets** (repo → Settings → Secrets and variables → Actions):

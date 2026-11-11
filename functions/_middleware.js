@@ -1,5 +1,5 @@
 // One shared password for the whole site (HTTP basic auth; any username).
-// The password is the Pages secret DASHBOARD_PASSWORD: wrangler pages secret put DASHBOARD_PASSWORD --project-name twin-response
+// The password is the Pages secret TWIN_PASSWORD: wrangler pages secret put TWIN_PASSWORD --project-name twin-response
 
 const REALM = "Twin Response Monitoring";
 
@@ -23,9 +23,12 @@ function suppliedPassword(request) {
 }
 
 export async function onRequest({ request, env, next }) {
-  if (!env.DASHBOARD_PASSWORD) return new Response("DASHBOARD_PASSWORD is not set on this Pages project.", { status: 503 });
+  if (!env.TWIN_PASSWORD) {
+    const why = env.TWIN_PASSWORD === undefined ? "is not set" : "is empty";
+    return new Response(`TWIN_PASSWORD ${why} on this Pages project.`, { status: 503 });
+  }
   const password = suppliedPassword(request);
-  if (password === null || !sameText(password, env.DASHBOARD_PASSWORD)) {
+  if (password === null || !sameText(password, env.TWIN_PASSWORD)) {
     return new Response("Password required.", {
       status: 401,
       headers: { "WWW-Authenticate": `Basic realm="${REALM}", charset="UTF-8"`, "Cache-Control": "no-store" },
