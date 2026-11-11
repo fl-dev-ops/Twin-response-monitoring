@@ -47,7 +47,9 @@ TRACED_SINCE = dt.datetime(2026, 11, 10, 12, 59, tzinfo=dt.UTC)  # voice agent â
 # ---------------------------------------------------------------- pull
 
 def langfuse_env():
-    env = {k: os.environ[k] for k in ("LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY", "LANGFUSE_BASE_URL") if os.environ.get(k)}
+    # Values pasted with their .env quotes (e.g. into GitHub secrets) still work.
+    env = {k: os.environ[k].strip().strip("\"'") for k in ("LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY", "LANGFUSE_BASE_URL")
+           if os.environ.get(k, "").strip().strip("\"'")}
     for f in (ROOT / "chat" / ".env", Path.cwd() / "chat" / ".env"):
         if len(env) == 3 or not f.exists():
             continue
