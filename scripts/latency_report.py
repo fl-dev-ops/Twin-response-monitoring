@@ -590,7 +590,9 @@ const days = [...new Set(D.sessions.map((x) => sessionDay[x.sid]))].sort().rever
 // Model filter: a session counts under the model that answered it (its turns go with it).
 const sessionModel = Object.fromEntries(D.sessions.map((x) => [x.sid, x.model]));
 const models = [...new Set(D.sessions.map((x) => x.model).filter(Boolean))].sort();
-let model = 'all';
+// Default: the model the latest call used (what prod runs now); a choice made in the filter is remembered.
+const latest = [...D.sessions].reverse().find((x) => x.model);
+let model = latest ? latest.model : 'all';
 const byModel = (x) => model === 'all' || sessionModel[x.sid] === model;
 const modelSel = document.getElementById('model');
 modelSel.innerHTML = '<option value="all">All models</option>' + models.map((m) => `<option value="${{esc(m)}}">${{esc(m)}}</option>`).join('');
